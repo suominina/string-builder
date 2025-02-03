@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -I include -Wall -Wextra -pedantic -std=c11 
+CFLAGS = -g -Wall -Wextra -pedantic -std=c11 
 
-sb: main.c
+test: test.c
 	$(CC) $(CFLAGS) -o $@ $<
