@@ -27,6 +27,7 @@ int main(void)
     printf("%s\n", buf);
 
     free(buf);
+    free(sb);
 
     return 0;
 }
