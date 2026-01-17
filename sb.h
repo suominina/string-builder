@@ -2,34 +2,32 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
-#define SB_ERROR -1
+enum SB_ERRORS {
+    SB_NULL,
+    SB_MALLOC_FAILED,
+    SB_ERROR,
+};
 
 typedef struct Node Node;
-
 struct Node {
-    int length;
+    int length; /* length of str */
     char *str;
     Node *next;
 };
 
 typedef struct StringBuilder {
-    int length;
+    int length; /* length of str of all the nodes */
+    int size; /* a number of nodes */
     Node *head;
     Node *body;
 } StringBuilder;
 
-StringBuilder *sb_init() {
-    StringBuilder *sb = malloc(sizeof(StringBuilder));
-    assert(sb != NULL);
-
-    return sb;
-}
-
 int sb_concat(StringBuilder *sb, char **retbuf)
 {
     if (sb == NULL) {
-        return SB_ERROR;
+        return SB_NULL;
     }
 
     char *buf = malloc(sizeof(char) * (sb->length + 1));
@@ -51,15 +49,19 @@ int sb_concat(StringBuilder *sb, char **retbuf)
 int sb_append(StringBuilder *sb, const char *str)
 {
     if (sb == NULL || str == NULL) {
-        return SB_ERROR;
+        return SB_NULL;
     }
 
     size_t str_len = strlen(str);
 
     Node *node = malloc(sizeof(Node));
-    assert(node != NULL);
+    if (node == NULL) {
+        return SB_MALLOC_FAILED;
+    }
     node->str = malloc(sizeof(char) * str_len + 1);
-    assert(node->str != NULL);
+    if (node->str== NULL) {
+        return SB_MALLOC_FAILED;
+    }
 
     node->length = str_len;
     node->next = NULL;
@@ -70,9 +72,11 @@ int sb_append(StringBuilder *sb, const char *str)
         sb->body = node;
     } else {
         sb->body->next = node;
+        sb->body = node;
     }
-    sb->body = node;
+
     sb->length += str_len;
+    sb->size++;
 
     return str_len;
 }
@@ -134,7 +138,8 @@ int sb_delete(StringBuilder *sb, int index)
         free(node->next);
         node->next = temp;
     }
-    
+
+    sb->size--;
     return 0;
 }
 
@@ -145,15 +150,36 @@ int sb_dump(StringBuilder *sb)
     }
     
     for (Node *node = sb->head; node; node = node->next) {
-        printf("%s\n", node->str);
+        printf("%s ", node->str);
     }
+    putchar('\n');
 
     return 0;
 }
 
 void sb_free(StringBuilder *sb)
 {
-    assert(sb != NULL);
-    free(sb->body);
-    free(sb);
+    if (sb == NULL || sb->head == NULL || sb->head == NULL) {
+        assert(false);
+    }
+
+    Node *node = sb->head; /* node to get freed */
+    Node *next_node = NULL; /* keep one node ahead of the node */
+    if (sb->head->next != NULL) {
+        next_node = sb->head->next;
+    }
+
+    while (1) {
+        if (next_node != NULL) {
+            free(node->str);
+            free(node);
+            node = next_node;
+            next_node = next_node->next;
+
+        } else {
+            break;
+        }
+    }
+
+    sb->size = 0;
 }
